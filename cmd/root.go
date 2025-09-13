@@ -4,6 +4,8 @@ Copyright © 2025 Ethan Lee <ethantlee21@gmail.com>
 package cmd
 
 import (
+	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/ethn1ee/llog/internal/config"
@@ -22,7 +24,19 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {},
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := log.Init(); err != nil {
+			return fmt.Errorf("failed to initialize logger: %w", err)
+		}
+		slog.Info("logger initialized")
+
+		if err := config.Init(cmd, cfgFile); err != nil {
+			return fmt.Errorf("failed to initialize config: %w", err)
+		}
+		slog.Info("config initialized")
+
+		return nil
+	},
 }
 
 func Execute() {
@@ -33,8 +47,5 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(log.Init)
-	cobra.OnInitialize(config.Init(cfgFile))
-
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/llog.yaml)")
 }

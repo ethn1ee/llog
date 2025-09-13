@@ -1,0 +1,19 @@
+version: 3
+
+tasks:
+  run:
+    cmds:
+      - go run . {{.CLI_ARGS}}
+    silent: true
+
+  run:config:
+    cmds:
+      - go run . --config ./config/llog.yaml {{.CLI_ARGS}}
+    silent: true
+
+  run:env:
+    dotenv:
+      - ./config/llog.env
+    cmds:
+      - go run . {{.CLI_ARGS}}
+    silent: true
