@@ -22,7 +22,8 @@ func New(cmd *cobra.Command) (*Handler, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get config: %w", err)
 	}
-	db, err := db.FromCmd(cmd)
+
+	db, err := db.New(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get db: %w", err)
 	}
@@ -39,7 +40,7 @@ func (h *Handler) AddEntry(cmd *cobra.Command, args []string) error {
 		Body: strings.Join(args, " "),
 	}
 
-	if err := h.db.AddEntry(cmd.Context(), entry); err != nil {
+	if err := h.db.Entry.Add(cmd.Context(), entry); err != nil {
 		return fmt.Errorf("failed to add entry: %w", err)
 	}
 	slog.Info("added entry", slog.Any("entry", entry))
@@ -48,7 +49,7 @@ func (h *Handler) AddEntry(cmd *cobra.Command, args []string) error {
 }
 
 func (h *Handler) GetAllEntry(cmd *cobra.Command, args []string) error {
-	entries, err := h.db.GetAllEntry(cmd.Context())
+	entries, err := h.db.Entry.GetAll(cmd.Context())
 	if err != nil {
 		return fmt.Errorf("failed to get all entries: %w", err)
 	}

@@ -21,3 +21,4 @@ tasks:
   build:
     cmds:
       - go build -o llog main.go
+    silent: true

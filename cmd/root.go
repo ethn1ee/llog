@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/ethn1ee/llog/internal/config"
-	"github.com/ethn1ee/llog/internal/db"
 	"github.com/ethn1ee/llog/internal/log"
 
 	"github.com/spf13/cobra"
@@ -49,12 +48,13 @@ func setUp(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to initialize config: %w", err)
 	}
 
-	if err := log.Init(cmd); err != nil {
-		return fmt.Errorf("failed to initialize logger: %w", err)
+	cfg, err := config.FromCmd(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to get config from context: %w", err)
 	}
 
-	if err := db.Init(cmd); err != nil {
-		return fmt.Errorf("failed to initialize db: %w", err)
+	if err := log.Init(cfg); err != nil {
+		return fmt.Errorf("failed to initialize logger: %w", err)
 	}
 
 	return nil
