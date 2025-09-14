@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
-	"time"
 
 	"github.com/ethn1ee/llog/internal/config"
 	"github.com/ethn1ee/llog/internal/db"
@@ -36,7 +35,6 @@ func New(cmd *cobra.Command) (*Handler, error) {
 
 func (h *Handler) AddEntry(cmd *cobra.Command, args []string) error {
 	entry := &models.Entry{
-		Time: time.Now().Unix(),
 		Body: strings.Join(args, " "),
 	}
 
@@ -48,15 +46,42 @@ func (h *Handler) AddEntry(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (h *Handler) GetAllEntry(cmd *cobra.Command, args []string) error {
-	entries, err := h.db.Entry.GetAll(cmd.Context())
+func (h *Handler) GetEntry(cmd *cobra.Command, args []string, opts *GetOpts) error {
+	ctx := cmd.Context()
+
+	var entries []models.Entry
+
+	err := opts.validate()
 	if err != nil {
-		return fmt.Errorf("failed to get all entries: %w", err)
+		return fmt.Errorf("failed to validate options: %w", err)
 	}
 
-	for _, entry := range entries {
-		fmt.Println(entry)
+	if opts.From != "" && opts.To != "" {
+		entries, err = h.db.Entry.GetRange(ctx, opts.fromTime, opts.toTime)
+		if err != nil {
+			return fmt.Errorf("failed to get entries: %w", err)
+		}
+	} else if opts.From != "" {
+		entries, err = h.db.Entry.GetFrom(ctx, opts.fromTime)
+		if err != nil {
+			return fmt.Errorf("failed to get entries: %w", err)
+		}
+	} else if opts.To != "" {
+		entries, err = h.db.Entry.GetTo(ctx, opts.toTime)
+		if err != nil {
+			return fmt.Errorf("failed to get entries: %w", err)
+		}
+	} else {
+		entries, err = h.db.Entry.GetAll(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get entries: %w", err)
+		}
+	}
+
+	for _, e := range entries {
+		fmt.Println(e)
 	}
 
 	return nil
 }
+

@@ -8,29 +8,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var getOpts handler.GetOpts
+
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get log entries",
 	Long:  `Get log entries from the database. You can get a specific entry by its ID or get all entries.`,
-}
-
-var getAllCmd = &cobra.Command{
-	Use:   "all",
-	Short: "Get all log entries",
-	Long:  `Get all log entries from the database.`,
 	Args:  cobra.NoArgs,
-	RunE:  withLog(getAllFn),
+	RunE:  withLog(get),
 }
 
-func getAllFn(cmd *cobra.Command, args []string) error {
+func get(cmd *cobra.Command, args []string) error {
 	handler, err := handler.New(cmd)
 	if err != nil {
 		return err
 	}
-	return handler.GetAllEntry(cmd, args)
+	return handler.GetEntry(cmd, args, &getOpts)
 }
 
 func init() {
+	getCmd.Flags().BoolVarP(&getOpts.Today, "today", "t", false, "get today's entries")
+	getCmd.Flags().StringVar(&getOpts.From, "from", "", "date in YYYY-MM-DD format")
+	getCmd.Flags().StringVar(&getOpts.To, "to", "", "date in YYYY-MM-DD format")
 	rootCmd.AddCommand(getCmd)
-	getCmd.AddCommand(getAllCmd)
 }

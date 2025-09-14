@@ -13,10 +13,10 @@ var addCmd = &cobra.Command{
 	Short: "Add a log entry",
 	Long:  `Add a log entry to the database.`,
 	Args:  cobra.MinimumNArgs(1),
-	RunE:  withLog(addFn),
+	RunE:  withLog(add),
 }
 
-func addFn(cmd *cobra.Command, args []string) error {
+func add(cmd *cobra.Command, args []string) error {
 	handler, err := handler.New(cmd)
 	if err != nil {
 		return err
