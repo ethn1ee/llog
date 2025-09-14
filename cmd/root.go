@@ -9,34 +9,19 @@ import (
 	"os"
 
 	"github.com/ethn1ee/llog/internal/config"
+	"github.com/ethn1ee/llog/internal/db"
 	"github.com/ethn1ee/llog/internal/log"
+
 	"github.com/spf13/cobra"
 )
 
-var cfgFile string
+type runFn func(cmd *cobra.Command, args []string) error
 
 var rootCmd = &cobra.Command{
-	Use:   "llog",
-	Short: "Log your life",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		if err := log.Init(); err != nil {
-			return fmt.Errorf("failed to initialize logger: %w", err)
-		}
-		slog.Info("logger initialized")
-
-		if err := config.Init(cmd, cfgFile); err != nil {
-			return fmt.Errorf("failed to initialize config: %w", err)
-		}
-		slog.Info("config initialized")
-
-		return nil
-	},
+	Use:               "llog",
+	Short:             "Life log",
+	Long:              `Record your fleeting moments with llog.`,
+	PersistentPreRunE: setUp,
 }
 
 func Execute() {
@@ -46,6 +31,31 @@ func Execute() {
 	}
 }
 
-func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/llog.yaml)")
+func withLog(fn runFn) runFn {
+	return func(cmd *cobra.Command, args []string) error {
+		cmdAttr := slog.String("command", cmd.Name())
+		slog.Info("command executing", cmdAttr)
+		if err := fn(cmd, args); err != nil {
+			slog.Error("command failed", cmdAttr, slog.Any("error", err))
+			return err
+		}
+		slog.Info("command succeeded", cmdAttr)
+		return nil
+	}
+}
+
+func setUp(cmd *cobra.Command, args []string) error {
+	if err := config.Init(cmd); err != nil {
+		return fmt.Errorf("failed to initialize config: %w", err)
+	}
+
+	if err := log.Init(cmd); err != nil {
+		return fmt.Errorf("failed to initialize logger: %w", err)
+	}
+
+	if err := db.Init(cmd); err != nil {
+		return fmt.Errorf("failed to initialize db: %w", err)
+	}
+
+	return nil
 }

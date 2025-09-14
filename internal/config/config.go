@@ -2,8 +2,8 @@ package config
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"path"
 
@@ -12,20 +12,31 @@ import (
 )
 
 type Config struct {
-	Foo string `mapstructure:"foo"`
+	ConfigDir string `mapstructure:"config_dir"`
+	DBPath    string `mapstructure:"db_path"`
+	LogPath   string `mapstructure:"log_path"`
 }
 
 type configKey struct{}
 
-func Init(cmd *cobra.Command, cfgFile string) error {
+func Init(cmd *cobra.Command) error {
 	ctx := cmd.Context()
 	cfg := &Config{}
 
-	setDefaults()
+	configPath, err := createConfigPath()
+	if err != nil {
+		return fmt.Errorf("failed to create config path: %w", err)
+	}
+
+	setDefaults(configPath)
+
+	viper.AddConfigPath(configPath)
+	viper.SetConfigName("llog")
+	viper.SetConfigType("yaml")
 	viper.SetEnvPrefix("LLOG")
 	viper.AutomaticEnv()
 
-	if err := readConfig(cfgFile); err != nil {
+	if err := readConfig(); err != nil {
 		return fmt.Errorf("failed to read config file: %w", err)
 	}
 
@@ -38,50 +49,43 @@ func Init(cmd *cobra.Command, cfgFile string) error {
 	return nil
 }
 
-func GetConfig(cmd *cobra.Command) (*Config, error) {
+func FromCmd(cmd *cobra.Command) (*Config, error) {
 	v := cmd.Context().Value(configKey{})
 	if v == nil {
-		return nil, fmt.Errorf("config not found in context")
+		return nil, errors.New("config not found in context")
 	}
 
 	cfg, ok := v.(*Config)
 	if !ok {
-		return nil, fmt.Errorf("config in context is not of type *config.Config")
+		return nil, errors.New("config in context is not of type *config.Config")
 	}
 
 	return cfg, nil
 }
 
-func readConfig(cfgFile string) error {
-	if cfgFile != "" {
-		if _, err := os.Stat(cfgFile); err != nil {
-			return fmt.Errorf("provided config file does not exist")
-		}
-		viper.SetConfigFile(cfgFile)
-	} else {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return fmt.Errorf("failed to locate home directory: %w", err)
-		}
+func createConfigPath() (string, error) {
+	// configDir, err := os.UserConfigDir()
+	// if err != nil {
+	// 	return "", fmt.Errorf("failed to locate user config directory: %w", err)
+	// }
+	configDir := "./.config"
+	configPath := path.Join(configDir, "llog")
 
-		configPath := path.Join(home, ".config", "llog")
-
-		viper.AddConfigPath(configPath)
-		viper.SetConfigName("llog")
-		viper.SetConfigType("yaml")
+	if err := os.MkdirAll(configPath, 0o755); err != nil {
+		if !errors.Is(err, os.ErrExist) {
+			return "", fmt.Errorf("failed to create config directory: %w", err)
+		}
 	}
 
+	return configPath, nil
+}
+
+func readConfig() error {
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			slog.Warn("no config file found, using defaults")
-			return nil
+		if !errors.As(err, &viper.ConfigFileNotFoundError{}) {
+			return err
 		}
-		return fmt.Errorf("failed to read config file: %w", err)
 	}
 
 	return nil
-}
-
-func setDefaults() {
-	viper.SetDefault("foo", "bar")
 }

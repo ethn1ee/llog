@@ -17,3 +17,7 @@ tasks:
     cmds:
       - go run . {{.CLI_ARGS}}
     silent: true
+
+  build:
+    cmds:
+      - go build -o llog main.go

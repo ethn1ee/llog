@@ -1,6 +1,5 @@
 /*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2025 Ethan Lee <ethantlee21@gmail.com>
 */
 package main
 
