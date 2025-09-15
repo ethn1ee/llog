@@ -1,28 +1,23 @@
 package config
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
 	"path"
 
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	ConfigDir string `mapstructure:"config_dir"`
-	DBPath    string `mapstructure:"db_path"`
-	LogPath   string `mapstructure:"log_path"`
+	ConfigDir  string `mapstructure:"config_dir"`
+	DBPath     string `mapstructure:"db_path"`
+	LogPath    string `mapstructure:"log_path"`
+	TimeLayout string `mapstructure:"time_layout"`
+	DateLayout string `mapstructure:"date_layout"`
 }
 
-type configKey struct{}
-
-func Init(cmd *cobra.Command) error {
-	ctx := cmd.Context()
-	cfg := &Config{}
-
+func Load(cfg *Config) error {
 	configPath, err := createConfigPath()
 	if err != nil {
 		return fmt.Errorf("failed to create config path: %w", err)
@@ -40,27 +35,11 @@ func Init(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	if err := viper.Unmarshal(&cfg); err != nil {
+	if err := viper.Unmarshal(cfg); err != nil {
 		return fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	cmd.SetContext(context.WithValue(ctx, configKey{}, cfg))
-
 	return nil
-}
-
-func FromCmd(cmd *cobra.Command) (*Config, error) {
-	v := cmd.Context().Value(configKey{})
-	if v == nil {
-		return nil, errors.New("config not found in context")
-	}
-
-	cfg, ok := v.(*Config)
-	if !ok {
-		return nil, errors.New("config in context is not of type *config.Config")
-	}
-
-	return cfg, nil
 }
 
 func createConfigPath() (string, error) {

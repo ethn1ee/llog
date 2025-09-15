@@ -9,53 +9,58 @@ import (
 	"os"
 
 	"github.com/ethn1ee/llog/internal/config"
-	"github.com/ethn1ee/llog/internal/log"
-
+	_db "github.com/ethn1ee/llog/internal/db"
+	"github.com/ethn1ee/llog/internal/logger"
 	"github.com/spf13/cobra"
 )
 
-type runFn func(cmd *cobra.Command, args []string) error
+var (
+	cfg = &config.Config{}
+	db  = &_db.DB{}
+	lg  = &logger.Logger{}
+	cmdAttr slog.Attr
+)
+
 
 var rootCmd = &cobra.Command{
-	Use:               "llog",
-	Short:             "Life log",
-	Long:              `Record your fleeting moments with llog.`,
-	PersistentPreRunE: setUp,
+	Use:   "llog",
+	Short: "Life log",
+	Long:  `Record your fleeting moments with llog.`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		cmdAttr = slog.Group(
+			"command",
+			slog.String("name", cmd.Name()),
+			slog.Any("args", args),
+		)
+
+		if err := config.Load(cfg); err != nil {
+			return fmt.Errorf("failed to load config: %w", err)
+		}
+
+		if err := logger.Init(cfg, lg); err != nil {
+			return fmt.Errorf("failed to load logger: %w", err)
+		}
+
+		slog.Info("command started", cmdAttr)
+		slog.Info("using config", cmdAttr, slog.Any("config", cfg))
+
+		if err := _db.Load(cfg, db); err != nil {
+			return fmt.Errorf("failed to load db: %w", err)
+		}
+
+		return nil
+	},
+	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+		slog.Info("command completed", cmdAttr)
+		return nil
+	},
 }
 
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
+		slog.Error("command failed", cmdAttr, slog.Any("error", err))
 		os.Exit(1)
 	}
-}
-
-func withLog(fn runFn) runFn {
-	return func(cmd *cobra.Command, args []string) error {
-		cmdAttr := slog.String("command", cmd.Name())
-		slog.Info("command executing", cmdAttr)
-		if err := fn(cmd, args); err != nil {
-			slog.Error("command failed", cmdAttr, slog.Any("error", err))
-			return err
-		}
-		slog.Info("command succeeded", cmdAttr)
-		return nil
-	}
-}
-
-func setUp(cmd *cobra.Command, args []string) error {
-	if err := config.Init(cmd); err != nil {
-		return fmt.Errorf("failed to initialize config: %w", err)
-	}
-
-	cfg, err := config.FromCmd(cmd)
-	if err != nil {
-		return fmt.Errorf("failed to get config from context: %w", err)
-	}
-
-	if err := log.Init(cfg); err != nil {
-		return fmt.Errorf("failed to initialize logger: %w", err)
-	}
-
-	return nil
+	lg.Close()
 }

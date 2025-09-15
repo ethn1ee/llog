@@ -8,27 +8,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var getOpts handler.GetOpts
+var getOpts = &handler.GetOpts{}
 
 var getCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Get log entries",
-	Long:  `Get log entries from the database. You can get a specific entry by its ID or get all entries.`,
-	Args:  cobra.NoArgs,
-	RunE:  withLog(get),
-}
-
-func get(cmd *cobra.Command, args []string) error {
-	handler, err := handler.New(cmd)
-	if err != nil {
-		return err
-	}
-	return handler.GetEntry(cmd, args, &getOpts)
+	Use:     "get",
+	Short:   "Get log entries",
+	Long:    `Get log entries. You can specify date range with flags.`,
+	Args:    cobra.NoArgs,
+	PreRunE: handler.ValidateOptions(cfg, getOpts),
+	RunE:    handler.Get(cfg, db, getOpts),
 }
 
 func init() {
-	getCmd.Flags().BoolVarP(&getOpts.Today, "today", "t", false, "get today's entries")
-	getCmd.Flags().StringVar(&getOpts.From, "from", "", "date in YYYY-MM-DD format")
-	getCmd.Flags().StringVar(&getOpts.To, "to", "", "date in YYYY-MM-DD format")
+	getCmd.Flags().BoolVarP(&(getOpts.Today), "today", "t", false, "get today's entries")
+	getCmd.Flags().BoolVarP(&(getOpts.Yesterday), "yesterday", "y", false, "get yesterday's entries")
+	getCmd.Flags().StringVar(&(getOpts.From), "from", "", "date in YYYY-MM-DD format")
+	getCmd.Flags().StringVar(&(getOpts.To), "to", "", "date in YYYY-MM-DD format")
+
 	rootCmd.AddCommand(getCmd)
 }

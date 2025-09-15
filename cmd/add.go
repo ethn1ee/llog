@@ -8,20 +8,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var addCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Add a log entry",
-	Long:  `Add a log entry to the database.`,
-	Args:  cobra.MinimumNArgs(1),
-	RunE:  withLog(add),
-}
+var addOpts = &handler.AddOpts{}
 
-func add(cmd *cobra.Command, args []string) error {
-	handler, err := handler.New(cmd)
-	if err != nil {
-		return err
-	}
-	return handler.AddEntry(cmd, args)
+var addCmd = &cobra.Command{
+	Use:     "add [body]",
+	Short:   "Add a log entry",
+	Long:    `Add a log entry.`,
+	Args:    cobra.ExactArgs(1),
+	PreRunE: handler.ValidateOptions(cfg, addOpts),
+	RunE:    handler.Add(cfg, db, addOpts),
 }
 
 func init() {

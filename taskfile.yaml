@@ -6,19 +6,12 @@ tasks:
       - go run . {{.CLI_ARGS}}
     silent: true
 
-  run:config:
-    cmds:
-      - go run . --config ./config/llog.yaml {{.CLI_ARGS}}
-    silent: true
-
-  run:env:
-    dotenv:
-      - ./config/llog.env
-    cmds:
-      - go run . {{.CLI_ARGS}}
-    silent: true
-
   build:
     cmds:
       - go build -o llog main.go
+    silent: true
+
+  clean:
+    cmds:
+      - rm -rf ./.config ./llog
     silent: true
