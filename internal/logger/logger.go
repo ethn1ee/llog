@@ -12,7 +12,7 @@ type Logger struct {
 	file *os.File
 }
 
-func Init(cfg *config.Config, lg *Logger) (error) {
+func Load(cfg *config.Config, lg *Logger) (error) {
 	file, err := os.OpenFile(cfg.LogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return  fmt.Errorf("failed to open log file; %w", err)

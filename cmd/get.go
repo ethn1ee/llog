@@ -20,10 +20,6 @@ var getCmd = &cobra.Command{
 }
 
 func init() {
-	getCmd.Flags().BoolVarP(&(getOpts.Today), "today", "t", false, "get today's entries")
-	getCmd.Flags().BoolVarP(&(getOpts.Yesterday), "yesterday", "y", false, "get yesterday's entries")
-	getCmd.Flags().StringVar(&(getOpts.From), "from", "", "date in YYYY-MM-DD format")
-	getCmd.Flags().StringVar(&(getOpts.To), "to", "", "date in YYYY-MM-DD format")
-
+	handler.ApplyFlags(getCmd, getOpts)
 	rootCmd.AddCommand(getCmd)
 }

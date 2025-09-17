@@ -43,7 +43,7 @@ func Get(cfg *config.Config, db *db.DB, opts *GetOpts) HandlerFunc {
 		var entries []model.Entry
 		var err error
 
-		from, to := opts.fromTime, opts.toTime
+		from, to := opts.Time.fromTime, opts.Time.toTime
 
 		if !from.IsZero() && !to.IsZero() {
 			entries, err = db.Entry.GetRange(ctx, from, to)
@@ -63,6 +63,13 @@ func Get(cfg *config.Config, db *db.DB, opts *GetOpts) HandlerFunc {
 
 		slog.Info("retrieved entries", slog.Int("count", len(entries)))
 
+		return nil
+	}
+}
+
+func Summarize(cfg *config.Config, db *db.DB, opts *SummarizeOpts) HandlerFunc {
+	return func(cmd *cobra.Command, args []string) error {
+		fmt.Println("summarize called")
 		return nil
 	}
 }

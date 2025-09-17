@@ -15,12 +15,11 @@ import (
 )
 
 var (
-	cfg = &config.Config{}
-	db  = &_db.DB{}
-	lg  = &logger.Logger{}
+	cfg     = &config.Config{}
+	db      = &_db.DB{}
+	lg      = &logger.Logger{}
 	cmdAttr slog.Attr
 )
-
 
 var rootCmd = &cobra.Command{
 	Use:   "llog",
@@ -37,7 +36,7 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("failed to load config: %w", err)
 		}
 
-		if err := logger.Init(cfg, lg); err != nil {
+		if err := logger.Load(cfg, lg); err != nil {
 			return fmt.Errorf("failed to load logger: %w", err)
 		}
 
@@ -62,5 +61,7 @@ func Execute() {
 		slog.Error("command failed", cmdAttr, slog.Any("error", err))
 		os.Exit(1)
 	}
-	lg.Close()
+	if err := lg.Close(); err != nil {
+		slog.Error("failed to close log file", cmdAttr, slog.Any("error", err))
+	}
 }

@@ -8,17 +8,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	mutexOptError  = "option '%s' cannot be used with option '%s'"
+	timeParseError = "failed to parse time: %w"
+)
+
 type Opts interface {
-	Validate(cfg *config.Config) error
+	applyFlags(cmd *cobra.Command)
+	validate(cfg *config.Config) error
 }
 
 func ValidateOptions(cfg *config.Config, opts Opts) HandlerFunc {
 	return func(cmd *cobra.Command, args []string) error {
-		return opts.Validate(cfg)
+		return opts.validate(cfg)
 	}
 }
 
-type GetOpts struct {
+func ApplyFlags(cmd *cobra.Command, opts Opts) {
+	opts.applyFlags(cmd)
+}
+
+type timeOpts struct {
 	Today     bool
 	Yesterday bool
 	From      string
@@ -28,12 +38,22 @@ type GetOpts struct {
 	toTime   time.Time
 }
 
-const (
-	mutexOptError = "option '%s' cannot be used with option '%s'"
-	timeParseError = "failed to parse time: %w"
-)
+func (o *timeOpts) applyFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVarP(
+		&(o.Today), "today", "t", false, "scope to today's entries",
+	)
+	cmd.Flags().BoolVarP(
+		&(o.Yesterday), "yesterday", "y", false, "scope to yesterday's entries",
+	)
+	cmd.Flags().StringVar(
+		&(o.From), "from", "", "scope start date in YYYY-MM-DD format",
+	)
+	cmd.Flags().StringVar(
+		&(o.To), "to", "", "scope end date in YYYY-MM-DD format",
+	)
+}
 
-func (o *GetOpts) Validate(cfg *config.Config) error {
+func (o *timeOpts) validate(cfg *config.Config) error {
 	// mutual exclusion checks
 	if o.Today && o.Yesterday {
 		return fmt.Errorf(mutexOptError, "today", "yesterday")
@@ -86,8 +106,32 @@ func (o *GetOpts) Validate(cfg *config.Config) error {
 	return nil
 }
 
+type GetOpts struct {
+	Time timeOpts
+}
+
+func (o *GetOpts) applyFlags(cmd *cobra.Command) {
+	o.Time.applyFlags(cmd)
+}
+
+func (o *GetOpts) validate(cfg *config.Config) error {
+	return o.Time.validate(cfg)
+}
+
 type AddOpts struct{}
 
-func (o *AddOpts) Validate(cfg *config.Config) error {
-	return nil
+func (o *AddOpts) applyFlags(cmd *cobra.Command) {}
+
+func (o *AddOpts) validate(cfg *config.Config) error { return nil }
+
+type SummarizeOpts struct {
+	Time timeOpts
+}
+
+func (o *SummarizeOpts) applyFlags(cmd *cobra.Command) {
+	o.Time.applyFlags(cmd)
+}
+
+func (o *SummarizeOpts) validate(cfg *config.Config) error {
+	return o.Time.validate(cfg)
 }

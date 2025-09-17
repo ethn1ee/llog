@@ -43,11 +43,11 @@ func Load(cfg *Config) error {
 }
 
 func createConfigPath() (string, error) {
-	// configDir, err := os.UserConfigDir()
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to locate user config directory: %w", err)
-	// }
-	configDir := "./.config"
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to locate user config directory: %w", err)
+	}
+
 	configPath := path.Join(configDir, "llog")
 
 	if err := os.MkdirAll(configPath, 0o755); err != nil {

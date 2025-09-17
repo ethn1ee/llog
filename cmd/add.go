@@ -20,5 +20,6 @@ var addCmd = &cobra.Command{
 }
 
 func init() {
+	handler.ApplyFlags(addCmd, addOpts)
 	rootCmd.AddCommand(addCmd)
 }
