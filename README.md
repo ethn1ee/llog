@@ -70,5 +70,6 @@ llog get --from 2025-09-01 --to 2025-09-31
 These are features I plan to add:
 
 - `llog summarize`: Summarizing entries with an LLM (can be useful to summarize a day for a standup meeting)
+- `llog search`: Fuzzy finding past logs
 - `llog config`: Viewing config and db locations
 - `llog reset`: Deleting all entries from data
