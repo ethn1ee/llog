@@ -6,6 +6,10 @@ All logs are stored locally in a SQLite file.
 
 ![screenshot](./assets/screenshot.png)
 
+## Installation
+
+
+
 ## Usage
 
 ### Adding Entry

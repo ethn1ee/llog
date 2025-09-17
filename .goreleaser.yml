@@ -37,5 +37,3 @@ homebrew_casks:
     homepage: "https://github.com/ethn1ee/llog"
     description: "A simple life logger"
     license: "MIT"
-    install: |
-      bin.install "committer"
