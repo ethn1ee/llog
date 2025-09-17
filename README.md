@@ -8,7 +8,16 @@ All logs are stored locally in a SQLite file.
 
 ## Installation
 
+### Download Binary
 
+Download binary from [release](https://github.com/ethn1ee/llog/releases/tag/v0.0.2). Available for macOS, Linux, and Windows on both arm64 and amd64.
+
+### Homebrew
+
+```sh
+brew tap ethn1ee/llog
+brew install llog
+```
 
 ## Usage
 
