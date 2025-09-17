@@ -15,8 +15,7 @@ Download binary from [release](https://github.com/ethn1ee/llog/releases/tag/v0.0
 ### Homebrew
 
 ```sh
-brew tap ethn1ee/llog
-brew install llog
+brew install --cask ethn1ee/tap/llog
 ```
 
 ## Usage
