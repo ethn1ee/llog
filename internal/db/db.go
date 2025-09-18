@@ -35,13 +35,22 @@ func Load(cfg *config.Config, ctx context.Context, db *DB) error {
 
 	db.Entry = &entryDB{gorm.G[model.Entry](gormdb)}
 
-	last, err := db.Entry.GetLast(ctx)
+	count, err := db.Entry.Count(ctx)
 	if err != nil {
 		return err
 	}
 
-	cfg.Internal.MaxId = last.ID
-	cfg.Internal.MaxIdDigits = len(strconv.FormatUint(uint64(last.ID), 10))
+	cfg.Internal.EntryCount = count
+
+	if count > 0 {
+		last, err := db.Entry.GetLast(ctx)
+		if err != nil {
+			return err
+		}
+
+		cfg.Internal.MaxEntryId = last.ID
+		cfg.Internal.MaxEntryIdDigits = len(strconv.FormatUint(uint64(last.ID), 10))
+	}
 
 	return nil
 }

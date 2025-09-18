@@ -11,11 +11,12 @@ import (
 var summarizeOpts = &handler.SummarizeOpts{}
 
 var summarizeCmd = &cobra.Command{
-	Use:     "summarize",
-	Short:   "Summarize log entries",
-	Long:    `Summarize log entries. You can specify date range with flags.`,
-	PreRunE: handler.ValidateOptions(cfg, summarizeOpts),
-	RunE:    handler.Summarize(cfg, db, summarizeOpts),
+	Use:          "summarize",
+	Short:        "Summarize log entries",
+	Long:         `Summarize log entries. You can specify date range with flags.`,
+	PreRunE:      handler.ValidateOptions(cfg, summarizeOpts),
+	RunE:         handler.Summarize(cfg, db, summarizeOpts),
+	SilenceUsage: true,
 }
 
 func init() {

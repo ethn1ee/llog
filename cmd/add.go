@@ -11,12 +11,13 @@ import (
 var addOpts = &handler.AddOpts{}
 
 var addCmd = &cobra.Command{
-	Use:     "add [body]",
-	Short:   "Add a log entry",
-	Long:    `Add a log entry.`,
-	Args:    cobra.ExactArgs(1),
-	PreRunE: handler.ValidateOptions(cfg, addOpts),
-	RunE:    handler.Add(cfg, db, addOpts),
+	Use:          "add [body]",
+	Short:        "Add a log entry",
+	Long:         `Add a log entry.`,
+	Args:         cobra.ExactArgs(1),
+	PreRunE:      handler.ValidateOptions(cfg, addOpts),
+	RunE:         handler.Add(cfg, db, addOpts),
+	SilenceUsage: true,
 }
 
 func init() {

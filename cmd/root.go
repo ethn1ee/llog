@@ -4,7 +4,6 @@ Copyright © 2025 Ethan Lee <ethantlee21@gmail.com>
 package cmd
 
 import (
-	"log/slog"
 	"os"
 
 	"github.com/ethn1ee/llog/internal/config"
@@ -15,10 +14,9 @@ import (
 )
 
 var (
-	cfg     = &config.Config{}
-	db      = &_db.DB{}
-	lg      = &logger.Logger{}
-	cmdAttr slog.Attr
+	cfg = &config.Config{}
+	db  = &_db.DB{}
+	lg  = &logger.Logger{}
 )
 
 var rootCmd = &cobra.Command{
@@ -26,19 +24,13 @@ var rootCmd = &cobra.Command{
 	Short:             "Life log",
 	Long:              `Record your fleeting moments with llog.`,
 	PersistentPreRunE: handler.Init(cfg, db, lg),
-	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
-		slog.Info("command completed", cmdAttr)
-		return nil
-	},
+	SilenceUsage:      true,
 }
 
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
-		slog.Error("command failed", cmdAttr, slog.Any("error", err))
 		os.Exit(1)
 	}
-	if err := lg.Close(); err != nil {
-		slog.Error("failed to close log file", cmdAttr, slog.Any("error", err))
-	}
+	_ = lg.Close()
 }

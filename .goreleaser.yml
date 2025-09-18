@@ -24,16 +24,3 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
-
-homebrew_casks:
-  - name: llog
-    repository:
-      owner: ethn1ee
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    commit_author:
-      name: goreleaserbot
-      email: bot@goreleaser.com
-    homepage: "https://github.com/ethn1ee/llog"
-    description: "A simple life logger"
-    license: "MIT"

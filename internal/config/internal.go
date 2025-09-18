@@ -1,6 +1,7 @@
 package config
 
 type internalConfig struct {
-	MaxId       uint
-	MaxIdDigits int
+	EntryCount       int64
+	MaxEntryId       uint64
+	MaxEntryIdDigits int
 }

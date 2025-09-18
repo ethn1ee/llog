@@ -9,18 +9,20 @@ import (
 )
 
 const (
-	mutexOptError  = "option '%s' cannot be used with option '%s'"
-	timeParseError = "failed to parse time: %w"
+	flagMutexError   = "option '%s' cannot be used with option '%s'"
+	flagIdMutexError = "cannot use flags when specifying an ID"
+	dateParseError   = "failed to parse date: %w"
+	dateRangeError   = "invalid date range: %s"
 )
 
 type Opts interface {
 	applyFlags(cmd *cobra.Command)
-	validate(cfg *config.Config) error
+	validate(cfg *config.Config, cmd *cobra.Command, args []string) error
 }
 
 func ValidateOptions(cfg *config.Config, opts Opts) HandlerFunc {
 	return func(cmd *cobra.Command, args []string) error {
-		return opts.validate(cfg)
+		return opts.validate(cfg, cmd, args)
 	}
 }
 
@@ -53,22 +55,22 @@ func (o *timeOpts) applyFlags(cmd *cobra.Command) {
 	)
 }
 
-func (o *timeOpts) validate(cfg *config.Config) error {
+func (o *timeOpts) validate(cfg *config.Config, cmd *cobra.Command, args []string) error {
 	// mutual exclusion checks
 	if o.Today && o.Yesterday {
-		return fmt.Errorf(mutexOptError, "today", "yesterday")
+		return fmt.Errorf(flagMutexError, "today", "yesterday")
 	}
 	if o.Today && o.From != "" {
-		return fmt.Errorf(mutexOptError, "today", "from")
+		return fmt.Errorf(flagMutexError, "today", "from")
 	}
 	if o.Today && o.To != "" {
-		return fmt.Errorf(mutexOptError, "today", "to")
+		return fmt.Errorf(flagMutexError, "today", "to")
 	}
 	if o.Yesterday && o.From != "" {
-		return fmt.Errorf(mutexOptError, "yesterday", "from")
+		return fmt.Errorf(flagMutexError, "yesterday", "from")
 	}
 	if o.Yesterday && o.To != "" {
-		return fmt.Errorf(mutexOptError, "yesterday", "to")
+		return fmt.Errorf(flagMutexError, "yesterday", "to")
 	}
 
 	// set fromTime and toTime
@@ -90,7 +92,7 @@ func (o *timeOpts) validate(cfg *config.Config) error {
 	if o.From != "" {
 		from, err := time.Parse(cfg.DateLayout, o.From)
 		if err != nil {
-			return fmt.Errorf(timeParseError, err)
+			return fmt.Errorf(dateParseError, err)
 		}
 		o.fromTime = from
 	}
@@ -98,53 +100,14 @@ func (o *timeOpts) validate(cfg *config.Config) error {
 	if o.To != "" {
 		to, err := time.Parse(cfg.DateLayout, o.To)
 		if err != nil {
-			return fmt.Errorf(timeParseError, err)
+			return fmt.Errorf(dateParseError, err)
 		}
 		o.toTime = to
 	}
 
+	if !o.fromTime.IsZero() && !o.toTime.IsZero() && o.fromTime.After(o.toTime) {
+		return fmt.Errorf(dateRangeError, "'from' cannot be after 'to'")
+	}
+
 	return nil
 }
-
-type GetOpts struct {
-	Time timeOpts
-}
-
-func (o *GetOpts) applyFlags(cmd *cobra.Command) {
-	o.Time.applyFlags(cmd)
-}
-
-func (o *GetOpts) validate(cfg *config.Config) error {
-	return o.Time.validate(cfg)
-}
-
-type AddOpts struct{}
-
-func (o *AddOpts) applyFlags(cmd *cobra.Command) {}
-
-func (o *AddOpts) validate(cfg *config.Config) error { return nil }
-
-type SummarizeOpts struct {
-	Time timeOpts
-}
-
-func (o *SummarizeOpts) applyFlags(cmd *cobra.Command) {
-	o.Time.applyFlags(cmd)
-}
-
-func (o *SummarizeOpts) validate(cfg *config.Config) error {
-	return o.Time.validate(cfg)
-}
-
-type DeleteOpts struct {
-	Interactive bool
-}
-
-func (o *DeleteOpts) applyFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&(o.Interactive), "interactive", "i", false, "select entries interactively")
-}
-
-func (o *DeleteOpts) validate(cfg *config.Config) error {
-	return nil
-}
-

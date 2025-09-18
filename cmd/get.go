@@ -11,12 +11,18 @@ import (
 var getOpts = &handler.GetOpts{}
 
 var getCmd = &cobra.Command{
-	Use:     "get",
-	Short:   "Get log entries",
-	Long:    `Get log entries. You can specify date range with flags.`,
-	Args:    cobra.NoArgs,
-	PreRunE: handler.ValidateOptions(cfg, getOpts),
-	RunE:    handler.Get(cfg, db, getOpts),
+	Use:   "get [ID]",
+	Short: "Get log entries",
+	Long: `Get log entries.
+
+You can retrieve a single entry by providing its ID as an argument.
+Alternatively, you can retrieve a list of entries by using flags to filter by date range or limit the count.
+
+Note: Providing an ID is mutually exclusive with using any flags.`,
+	Args:         cobra.MaximumNArgs(1),
+	PreRunE:      handler.ValidateOptions(cfg, getOpts),
+	RunE:         handler.Get(cfg, db, getOpts),
+	SilenceUsage: true,
 }
 
 func init() {
