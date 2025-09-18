@@ -16,5 +16,7 @@ func PrintEntries(cfg *config.Config, entries []model.Entry) {
 
 func PrintEntry(cfg *config.Config, entry model.Entry) {
 	time := color.HiBlackString(entry.CreatedAt.Format(cfg.TimeLayout))
-	fmt.Printf("%s %s\n", time, entry.Body)
+	id := color.HiCyanString(fmt.Sprintf("[%*d]", cfg.Internal.MaxIdDigits, entry.ID))
+
+	fmt.Printf("%s %s %s\n", id, time, entry.Body)
 }

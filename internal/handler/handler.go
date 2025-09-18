@@ -5,7 +5,8 @@ import (
 	"log/slog"
 
 	"github.com/ethn1ee/llog/internal/config"
-	"github.com/ethn1ee/llog/internal/db"
+	_db "github.com/ethn1ee/llog/internal/db"
+	"github.com/ethn1ee/llog/internal/logger"
 	"github.com/ethn1ee/llog/internal/model"
 	"github.com/ethn1ee/llog/internal/view"
 	"github.com/spf13/cobra"
@@ -18,7 +19,36 @@ const (
 	getEntryError = "failed to get entries: %w"
 )
 
-func Add(cfg *config.Config, db *db.DB, opts *AddOpts) HandlerFunc {
+func Init(cfg *config.Config, db *_db.DB, lg *logger.Logger) HandlerFunc {
+	return func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+
+		cmdAttr := slog.Group(
+			"command",
+			slog.String("name", cmd.Name()),
+			slog.Any("args", args),
+		)
+
+		if err := config.Load(cfg); err != nil {
+			return fmt.Errorf("failed to load config: %w", err)
+		}
+
+		if err := logger.Load(cfg, lg); err != nil {
+			return fmt.Errorf("failed to load logger: %w", err)
+		}
+
+		slog.Info("command started", cmdAttr)
+		slog.Info("using config", cmdAttr, slog.Any("config", cfg))
+
+		if err := _db.Load(cfg, ctx, db); err != nil {
+			return fmt.Errorf("failed to load db: %w", err)
+		}
+
+		return nil
+	}
+}
+
+func Add(cfg *config.Config, db *_db.DB, opts *AddOpts) HandlerFunc {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
@@ -36,7 +66,7 @@ func Add(cfg *config.Config, db *db.DB, opts *AddOpts) HandlerFunc {
 	}
 }
 
-func Get(cfg *config.Config, db *db.DB, opts *GetOpts) HandlerFunc {
+func Get(cfg *config.Config, db *_db.DB, opts *GetOpts) HandlerFunc {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
@@ -67,7 +97,13 @@ func Get(cfg *config.Config, db *db.DB, opts *GetOpts) HandlerFunc {
 	}
 }
 
-func Summarize(cfg *config.Config, db *db.DB, opts *SummarizeOpts) HandlerFunc {
+func Delete(cfg *config.Config, db *_db.DB, opts *DeleteOpts) HandlerFunc {
+	return func(cmd *cobra.Command, args []string) error {
+		return nil
+	}
+}
+
+func Summarize(cfg *config.Config, db *_db.DB, opts *SummarizeOpts) HandlerFunc {
 	return func(cmd *cobra.Command, args []string) error {
 		fmt.Println("summarize called")
 		return nil

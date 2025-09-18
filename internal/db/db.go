@@ -1,9 +1,11 @@
 package db
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/ethn1ee/llog/internal/config"
 	"github.com/ethn1ee/llog/internal/model"
@@ -15,7 +17,7 @@ type DB struct {
 	Entry *entryDB
 }
 
-func Load(cfg *config.Config, db *DB) error {
+func Load(cfg *config.Config, ctx context.Context, db *DB) error {
 	dir := filepath.Dir(cfg.DBPath)
 
 	if err := os.Mkdir(dir, 0755); err != nil && !os.IsExist(err) {
@@ -32,5 +34,14 @@ func Load(cfg *config.Config, db *DB) error {
 	}
 
 	db.Entry = &entryDB{gorm.G[model.Entry](gormdb)}
+
+	last, err := db.Entry.GetLast(ctx)
+	if err != nil {
+		return err
+	}
+
+	cfg.Internal.MaxId = last.ID
+	cfg.Internal.MaxIdDigits = len(strconv.FormatUint(uint64(last.ID), 10))
+
 	return nil
 }

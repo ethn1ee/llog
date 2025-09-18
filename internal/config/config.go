@@ -15,6 +15,8 @@ type Config struct {
 	LogPath    string `mapstructure:"log_path"`
 	TimeLayout string `mapstructure:"time_layout"`
 	DateLayout string `mapstructure:"date_layout"`
+
+	Internal internalConfig `mapstructure:"-"`
 }
 
 func Load(cfg *Config) error {

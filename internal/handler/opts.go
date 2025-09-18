@@ -135,3 +135,16 @@ func (o *SummarizeOpts) applyFlags(cmd *cobra.Command) {
 func (o *SummarizeOpts) validate(cfg *config.Config) error {
 	return o.Time.validate(cfg)
 }
+
+type DeleteOpts struct {
+	Interactive bool
+}
+
+func (o *DeleteOpts) applyFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVarP(&(o.Interactive), "interactive", "i", false, "select entries interactively")
+}
+
+func (o *DeleteOpts) validate(cfg *config.Config) error {
+	return nil
+}
+
