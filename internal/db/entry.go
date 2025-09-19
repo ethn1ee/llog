@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/ethn1ee/llog/internal/model"
@@ -17,45 +16,60 @@ func (db *entryDB) Count(ctx context.Context) (int64, error) {
 	return db.i.Count(ctx, "id")
 }
 
-func (db *entryDB) Add(ctx context.Context, entry *model.Entry) error {
-	return db.i.Create(ctx, entry)
-}
-
-func (db *entryDB) GetAll(ctx context.Context) ([]model.Entry, error) {
-	return db.i.Find(ctx)
-}
-
-func (db *entryDB) GetRange(ctx context.Context, from time.Time, to time.Time) ([]model.Entry, error) {
-	if from.IsZero() && to.IsZero() {
-		return nil, errors.New("range unspecified")
-	}
+func (db *entryDB) WithRange(from time.Time, to time.Time) gorm.ChainInterface[model.Entry] {
 	if from.IsZero() {
-		return db.i.Where("created_at <= ?", to).Find(ctx)
+		return db.i.Where("created_at <= ?", to)
 	}
 	if to.IsZero() {
-		return db.i.Where("created_at >= ?", from).Find(ctx)
+		return db.i.Where("created_at >= ?", from)
 	}
-	return db.i.Where("created_at >= ? AND created_at <= ?", from, to).Find(ctx)
+	return db.i.Where("created_at >= ? AND created_at <= ?", from, to)
+}
+
+func (db *entryDB) WithIds(ids []uint64) gorm.ChainInterface[model.Entry] {
+	return db.i.Where("id IN ?", ids)
+}
+
+func (db *entryDB) Add(ctx context.Context, entries []model.Entry) error {
+	return db.i.CreateInBatches(ctx, &entries, len(entries))
 }
 
 func (db *entryDB) GetLast(ctx context.Context) (model.Entry, error) {
-	return db.i.Last(ctx)
+	return db.i.Order("created_at desc").Last(ctx)
 }
 
-func (db *entryDB) GetById(ctx context.Context, id uint64) (model.Entry, error) {
-	match, err := db.i.Where("id = ?", id).Find(ctx)
-	if err != nil {
-		return model.Entry{}, err
+func (db *entryDB) Get(ctx context.Context, subquery gorm.ChainInterface[model.Entry], n int) ([]model.Entry, error) {
+	var limited gorm.ChainInterface[model.Entry]
+	if subquery == nil {
+		limited = db.i.Order("created_at desc").Limit(n)
+	} else {
+		limited = subquery.Order("created_at desc").Limit(n)
 	}
-
-	return match[0], nil
+	return db.i.Table("(?) as limited", limited).Order("created_at").Find(ctx)
 }
 
-func (db *entryDB) DeleteById(ctx context.Context, id uint64) error {
-	_, err := db.i.Where("id = ?", id).Delete(ctx)
-	if err != nil {
-		return err
+func (db *entryDB) Delete(ctx context.Context, subquery gorm.ChainInterface[model.Entry], n int) (int, error) {
+	var limited gorm.ChainInterface[model.Entry]
+	if subquery == nil {
+		limited = db.i.Order("created_at desc").Limit(n)
+	} else {
+		limited = subquery.Order("created_at desc").Limit(n)
 	}
+
+	toDelete, err := limited.Find(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	ids := make([]uint64, len(toDelete))
+	for i, e := range toDelete {
+		ids[i] = e.ID
+	}
+
+	return db.i.Where("id IN ?", ids).Delete(ctx)
+}
+
+func (db *entryDB) Nuke(ctx context.Context) error {
 
 	return nil
 }

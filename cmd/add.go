@@ -11,10 +11,13 @@ import (
 var addOpts = &handler.AddOpts{}
 
 var addCmd = &cobra.Command{
-	Use:          "add [body]",
-	Short:        "Add a log entry",
-	Long:         `Add a log entry.`,
-	Args:         cobra.ExactArgs(1),
+	Use:   "add [body]",
+	Short: "Add log entries",
+	Long: `Add log entries.
+
+You can create multiple entries by providing as multiple arguments.
+`,
+	Args:         cobra.MinimumNArgs(1),
 	PreRunE:      handler.ValidateOptions(cfg, addOpts),
 	RunE:         handler.Add(cfg, db, addOpts),
 	SilenceUsage: true,

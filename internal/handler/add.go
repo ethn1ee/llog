@@ -2,27 +2,35 @@ package handler
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/ethn1ee/llog/internal/config"
 	_db "github.com/ethn1ee/llog/internal/db"
+	"github.com/ethn1ee/llog/internal/logger"
 	"github.com/ethn1ee/llog/internal/model"
+	"github.com/ethn1ee/llog/internal/view"
 	"github.com/spf13/cobra"
 )
 
 func Add(cfg *config.Config, db *_db.DB, opts *AddOpts) HandlerFunc {
 	return func(cmd *cobra.Command, args []string) error {
+		logger.LogCmdStart(cmd)
+
 		ctx := cmd.Context()
+		entries := make([]model.Entry, len(args))
 
-		entry := &model.Entry{
-			Body: args[0],
+		for i, arg := range args {
+			entries[i] = model.Entry{
+				Body: arg,
+			}
 		}
 
-		if err := db.Entry.Add(ctx, entry); err != nil {
-			return fmt.Errorf(addEntryError, err)
+		if err := db.Entry.Add(ctx, entries); err != nil {
+			return fmt.Errorf(dbAddEntryError, err)
 		}
 
-		slog.Info("added entry", slog.Any("entry", entry))
+		view.PrintAdd(len(entries))
+
+		logger.LogCmdComplete(cmd)
 
 		return nil
 	}
@@ -32,4 +40,4 @@ type AddOpts struct{}
 
 func (o *AddOpts) applyFlags(cmd *cobra.Command) {}
 
-func (o *AddOpts) validate(cfg *config.Config, cmd *cobra.Command, args []string) error { return nil }
+func (o *AddOpts) validate(cfg *config.Config, args []string, flags []string) error { return nil }

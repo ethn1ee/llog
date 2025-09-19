@@ -1,35 +1,32 @@
 package view
 
 import (
-	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/ethn1ee/llog/internal/config"
 	"github.com/ethn1ee/llog/internal/model"
 	"github.com/fatih/color"
+	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 func PrintEntries(cfg *config.Config, entries []model.Entry) {
-	maxIdDigits := 0
-
-	for _, e := range entries {
-		idDigits := len(strconv.FormatUint(e.ID, 10))
-		if idDigits > maxIdDigits {
-			maxIdDigits = idDigits
+	data := make([][]string, len(entries))
+	for i, e := range entries {
+		data[i] = []string{
+			color.HiCyanString(strconv.FormatUint(e.ID, 10)),
+			color.HiBlackString(e.CreatedAt.Format(cfg.TimeLayout)),
+			e.Body,
 		}
 	}
 
-	for _, e := range entries {
-		time := color.HiBlackString(e.CreatedAt.Format(cfg.TimeLayout))
-		id := color.HiCyanString(fmt.Sprintf("[%*d]", maxIdDigits, e.ID))
+	symbols := tw.NewSymbolCustom("minimal").
+		WithRow("").
+		WithColumn("")
 
-		fmt.Printf("%s %s %s\n", id, time, e.Body)
-	}
-}
-
-func PrintEntry(cfg *config.Config, entry model.Entry) {
-	time := color.HiBlackString(entry.CreatedAt.Format(cfg.TimeLayout))
-	id := color.HiCyanString(fmt.Sprintf("[%d]", entry.ID))
-
-	fmt.Printf("%s %s %s\n", id, time, entry.Body)
+	table := tablewriter.NewTable(os.Stdout, tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{Symbols: symbols})))
+	_ = table.Bulk(data)
+	_ = table.Render()
 }

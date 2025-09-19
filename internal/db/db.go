@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 
 	"github.com/ethn1ee/llog/internal/config"
 	"github.com/ethn1ee/llog/internal/model"
@@ -14,6 +13,7 @@ import (
 )
 
 type DB struct {
+	db    *gorm.DB
 	Entry *entryDB
 }
 
@@ -33,6 +33,7 @@ func Load(cfg *config.Config, ctx context.Context, db *DB) error {
 		return fmt.Errorf("failed to migrate Entry: %w", err)
 	}
 
+	db.db = gormdb
 	db.Entry = &entryDB{gorm.G[model.Entry](gormdb)}
 
 	count, err := db.Entry.Count(ctx)
@@ -49,8 +50,11 @@ func Load(cfg *config.Config, ctx context.Context, db *DB) error {
 		}
 
 		cfg.Internal.MaxEntryId = last.ID
-		cfg.Internal.MaxEntryIdDigits = len(strconv.FormatUint(uint64(last.ID), 10))
 	}
 
 	return nil
+}
+
+func (db *DB) Nuke() error {
+	return db.db.Migrator().DropTable(&model.Entry{})
 }

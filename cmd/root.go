@@ -4,6 +4,7 @@ Copyright © 2025 Ethan Lee <ethantlee21@gmail.com>
 package cmd
 
 import (
+	"log/slog"
 	"os"
 
 	"github.com/ethn1ee/llog/internal/config"
@@ -30,6 +31,7 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
+		slog.Error("failed to execute command", slog.Any("error", err))
 		os.Exit(1)
 	}
 	_ = lg.Close()

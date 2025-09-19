@@ -3,100 +3,136 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"log/slog"
+	"slices"
 	"strconv"
 
 	"github.com/ethn1ee/llog/internal/config"
 	_db "github.com/ethn1ee/llog/internal/db"
+	"github.com/ethn1ee/llog/internal/logger"
 	"github.com/ethn1ee/llog/internal/model"
 	"github.com/ethn1ee/llog/internal/view"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 func Get(cfg *config.Config, db *_db.DB, opts *GetOpts) HandlerFunc {
 	return func(cmd *cobra.Command, args []string) error {
-		if len(args) > 0 {
-			return getById(cfg, db)(cmd, args)
-		}
-		return getWithOpts(cfg, db, opts)(cmd, args)
-	}
-}
-
-func getById(cfg *config.Config, db *_db.DB) HandlerFunc {
-	return func(cmd *cobra.Command, args []string) error {
-		ctx := cmd.Context()
-
-		id, err := strconv.ParseUint(args[0], 10, 32)
-		if err != nil {
-			return fmt.Errorf("invalid ID: %w", err)
-		}
-
-		if id < 1 || id > cfg.Internal.MaxEntryId {
-			return fmt.Errorf("invalid ID: ID %d does not exist", id)
-		}
-
-		entry, err := db.Entry.GetById(ctx, id)
-		if err != nil {
-			return fmt.Errorf(getEntryError, err)
-		}
-
-		view.PrintEntry(cfg, entry)
-
-		slog.Info("retrieved entry with ID", slog.Uint64("id", id))
-
-		return nil
-	}
-}
-
-func getWithOpts(cfg *config.Config, db *_db.DB, opts *GetOpts) HandlerFunc {
-	return func(cmd *cobra.Command, args []string) error {
-		ctx := cmd.Context()
+		logger.LogCmdStart(cmd)
 
 		var entries []model.Entry
 		var err error
 
-		from, to := opts.Time.fromTime, opts.Time.toTime
-
-		if !from.IsZero() || !to.IsZero() {
-			entries, err = db.Entry.GetRange(ctx, from, to)
+		if len(args) > 0 {
+			entries, err = getWithArgs(cfg, db, cmd, args)
 		} else {
-			entries, err = db.Entry.GetAll(ctx)
+			entries, err = getWithOpts(cfg, db, cmd, opts)
 		}
 
 		if err != nil {
-			return fmt.Errorf(getEntryError, err)
+			return err
 		}
 
 		view.PrintEntries(cfg, entries)
+		view.PrintGet(len(entries))
 
-		slog.Info("retrieved entries with options", slog.Int("count", len(entries)))
+		logger.LogCmdComplete(cmd)
 
 		return nil
 	}
+}
+
+func getWithArgs(cfg *config.Config, db *_db.DB, cmd *cobra.Command, args []string) ([]model.Entry, error) {
+	ctx := cmd.Context()
+	ids := make([]uint64, len(args))
+
+	for i, arg := range args {
+		id, err := strconv.ParseUint(arg, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf(idParseError, err)
+		}
+
+		if id < 1 || id > cfg.Internal.MaxEntryId {
+			return nil, fmt.Errorf(idVoidError, id)
+		}
+
+		ids[i] = id
+	}
+
+	entries, err := db.Entry.Get(ctx, db.Entry.WithIds(ids), -1)
+	if err != nil {
+		return nil, fmt.Errorf(dbGetEntryError, err)
+	}
+
+	return entries, nil
+}
+
+func getWithOpts(_ *config.Config, db *_db.DB, cmd *cobra.Command, opts *GetOpts) ([]model.Entry, error) {
+	ctx := cmd.Context()
+
+	var entries []model.Entry
+	var err error
+
+	from, to := opts.Time.fromTime, opts.Time.toTime
+
+	if !from.IsZero() || !to.IsZero() {
+		entries, err = db.Entry.Get(ctx, db.Entry.WithRange(from, to), opts.Limit)
+	} else {
+		entries, err = db.Entry.Get(ctx, nil, opts.Limit)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf(dbGetEntryError, err)
+	}
+
+	return entries, nil
 }
 
 type GetOpts struct {
 	Time  timeOpts
 	Limit int
+	All   bool
 }
 
 func (o *GetOpts) applyFlags(cmd *cobra.Command) {
 	o.Time.applyFlags(cmd)
-	cmd.Flags().IntVarP(&(o.Limit), "limit", "n", 10, "number of entries to return (default"+strconv.Itoa(10)+")")
+	cmd.Flags().IntVarP(&(o.Limit), "limit", "n", 10, "number of entries to return")
+	cmd.Flags().BoolVarP(&(o.All), "all", "a", false, "retrurn all entries")
 }
 
-func (o *GetOpts) validate(cfg *config.Config, cmd *cobra.Command, args []string) error {
-	isIdSet := len(args) > 0
-	isFlagSet := false
-
-	cmd.Flags().Visit(func(f *pflag.Flag) {
-		isFlagSet = true
-	})
-
-	if isIdSet && isFlagSet {
+func (o *GetOpts) validate(cfg *config.Config, args []string, flags []string) error {
+	if len(args) > 0 && len(flags) > 0 {
 		return errors.New(flagIdMutexError)
 	}
 
-	return o.Time.validate(cfg, cmd, args)
+	if err := o.Time.validate(cfg, args, flags); err != nil {
+		return err
+	}
+
+	if !o.Time.fromTime.IsZero() {
+		if slices.Contains(flags, "limit") {
+			return fmt.Errorf(flagMutexError, "from", "limit")
+		}
+		if slices.Contains(flags, "all") {
+			return fmt.Errorf(flagMutexError, "from", "all")
+		}
+		o.Limit = -1
+	}
+
+	if !o.Time.toTime.IsZero() {
+		if slices.Contains(flags, "limit") {
+			return fmt.Errorf(flagMutexError, "to", "limit")
+		}
+		if slices.Contains(flags, "all") {
+			return fmt.Errorf(flagMutexError, "to", "all")
+		}
+		o.Limit = -1
+	}
+
+	if o.All {
+		if slices.Contains(flags, "limit") {
+			return fmt.Errorf(flagMutexError, "all", "limit")
+		}
+		o.Limit = -1
+	}
+
+	return nil
 }
