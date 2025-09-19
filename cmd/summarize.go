@@ -21,5 +21,5 @@ var summarizeCmd = &cobra.Command{
 
 func init() {
 	handler.ApplyFlags(summarizeCmd, summarizeOpts)
-	rootCmd.AddCommand(summarizeCmd)
+	// rootCmd.AddCommand(summarizeCmd)
 }

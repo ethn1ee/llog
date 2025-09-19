@@ -97,14 +97,14 @@ Deletes log entries. This command also has two modes:
     llog delete --yesterday
     ```
 
-### `llog summarize`
+<!-- ### `llog summarize` -->
 
-Generates an AI-powered summary of your log entries for a given period.
+<!-- Generates an AI-powered summary of your log entries for a given period. -->
 
-```bash
-# Summarize today's entries
-llog summarize --today
+<!-- ```bash -->
+<!-- # Summarize today's entries -->
+<!-- llog summarize --today -->
 
-# Summarize entries from a specific date range
-llog summarize --from 2025-09-01 --to 2025-09-18
-```
+<!-- # Summarize entries from a specific date range -->
+<!-- llog summarize --from 2025-09-01 --to 2025-09-18 -->
+<!-- ``` -->
