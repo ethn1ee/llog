@@ -16,6 +16,7 @@ import (
 func Delete(cfg *config.Config, db *_db.DB, opts *DeleteOpts) HandlerFunc {
 	return func(cmd *cobra.Command, args []string) error {
 		logger.LogCmdStart(cmd)
+		defer logger.LogCmdComplete(cmd)
 
 		var count int
 		var err error
@@ -31,8 +32,6 @@ func Delete(cfg *config.Config, db *_db.DB, opts *DeleteOpts) HandlerFunc {
 		}
 
 		view.PrintDelete(count)
-
-		logger.LogCmdComplete(cmd)
 
 		return nil
 	}

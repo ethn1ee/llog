@@ -7,15 +7,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func Reset(cfg *config.Config, db *_db.DB, opts *NukeOpts) HandlerFunc {
+func Nuke(cfg *config.Config, db *_db.DB, opts *NukeOpts) HandlerFunc {
 	return func(cmd *cobra.Command, args []string) error {
 		logger.LogCmdStart(cmd)
+		defer logger.LogCmdComplete(cmd)
 
 		if err := db.Nuke(); err != nil {
 			return err
 		}
-
-		logger.LogCmdComplete(cmd)
 
 		return nil
 	}

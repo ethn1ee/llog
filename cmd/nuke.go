@@ -19,7 +19,7 @@ This will nuke the entire database and clear all data.
 This action cannot be undone.`,
 	Args:         cobra.ArbitraryArgs,
 	PreRunE:      handler.ValidateOptions(cfg, nukeOpts),
-	RunE:         handler.Reset(cfg, db, nukeOpts),
+	RunE:         handler.Nuke(cfg, db, nukeOpts),
 	SilenceUsage: true,
 }
 

@@ -14,6 +14,7 @@ import (
 func Add(cfg *config.Config, db *_db.DB, opts *AddOpts) HandlerFunc {
 	return func(cmd *cobra.Command, args []string) error {
 		logger.LogCmdStart(cmd)
+		defer logger.LogCmdComplete(cmd)
 
 		ctx := cmd.Context()
 		entries := make([]model.Entry, len(args))
@@ -29,8 +30,6 @@ func Add(cfg *config.Config, db *_db.DB, opts *AddOpts) HandlerFunc {
 		}
 
 		view.PrintAdd(len(entries))
-
-		logger.LogCmdComplete(cmd)
 
 		return nil
 	}

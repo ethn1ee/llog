@@ -17,6 +17,7 @@ import (
 func Get(cfg *config.Config, db *_db.DB, opts *GetOpts) HandlerFunc {
 	return func(cmd *cobra.Command, args []string) error {
 		logger.LogCmdStart(cmd)
+		defer logger.LogCmdComplete(cmd)
 
 		var entries []model.Entry
 		var err error
@@ -33,8 +34,6 @@ func Get(cfg *config.Config, db *_db.DB, opts *GetOpts) HandlerFunc {
 
 		view.PrintEntries(cfg, entries)
 		view.PrintGet(len(entries))
-
-		logger.LogCmdComplete(cmd)
 
 		return nil
 	}

@@ -10,8 +10,7 @@ import (
 func Summarize(cfg *config.Config, db *_db.DB, opts *SummarizeOpts) HandlerFunc {
 	return func(cmd *cobra.Command, args []string) error {
 		logger.LogCmdStart(cmd)
-
-		logger.LogCmdComplete(cmd)
+		defer logger.LogCmdComplete(cmd)
 
 		return nil
 	}
