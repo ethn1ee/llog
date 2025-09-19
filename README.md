@@ -1,7 +1,7 @@
 # llog
 
 A simple life logger CLI to record your fleeting moments.
-Use it as your dev log for standups, as a timestamped journal, or even as a memo.
+Use it as your dev log for standups, as a timestamped journal, or even as an instant memo.
 
 ![screenshot](./assets/screenshot.png)
 
