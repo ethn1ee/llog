@@ -1,6 +1,7 @@
 # llog
 
-A simple life logger CLI to record your fleeting moments.
+A fast, lightweight CLI for journaling directly from your terminal.
+
 Use it as your dev log for standups, as a timestamped journal, or even as an instant memo.
 
 ![screenshot](./assets/screenshot.png)
